@@ -1,0 +1,7 @@
+.vscode/*
+build/**
+
+*.obj
+*.exe
+file_format.txt
+TODO.md

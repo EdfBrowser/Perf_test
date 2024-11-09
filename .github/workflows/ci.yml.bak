@@ -1,0 +1,75 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-2019
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.8'
+    
+    - name: Set up MSVC
+      uses: ilammy/msvc-dev-cmd@v1.13.0
+      with:
+        arch: x64
+
+    - name: Install CUDA Toolkit
+      id: cuda-toolkit
+      uses: Jimver/cuda-toolkit@v0.2.16
+      with:
+        cuda: '11.8.0'
+
+    - name: Cache LIBS
+      uses: actions/cache@v4
+      id: cache-LIBS
+      with:
+        path: "C:\\LIBS"
+        key: LIBS
+  
+    - name: Download libraries
+      if: steps.cache-LIBS.outputs.cache-hit != 'true'
+      run: |
+        Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+        .\setup-essential.ps1
+      working-directory: ${{ github.workspace }}
+
+    - name: Export essential variable
+      run: |
+        echo "NVTOOLSEXT_PATH=C:\\Program Files\\NVIDIA Corporation\\NvToolsExt" >> ${{ github.env }}
+        echo "TORCH_INSTALL_PREFIX=c:\\LIBTORCH_PACKAGE\\libtorch" >> ${{ github.env }}
+        echo "ONNXRUNTIME_ROOTDIR=C:\\ONNXRUNTIME_PACKAGE" >> ${{ github.env }}
+        echo "C:\\CUDNN_PACKAGE\\bin" >> ${{ github.path }}
+        echo "C:\\CUDNN_PACKAGE\\lib" >> ${{ github.path }}
+        echo "C:\\CUDNN_PACKAGE\\include" >> ${{ github.path }}
+        echo ${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"\\bin" >> ${{ github.path }}
+        echo ${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"\\lib" >> ${{ github.path }}
+        echo ${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"\\include" >> ${{ github.path }}
+        echo "C:\\ZLIB_PACKAGE\\dll_x64\\include" >> ${{ github.path }}
+
+    - name: Configure
+      run: >
+        cmake -B ${{ github.workspace }}/build
+        -DCMAKE_CXX_COMPILER=cl
+        -DCMAKE_C_COMPILER=cl
+        -Donnxruntime_USE_CUDA=ON
+        -Dlibtorch_USE_CUDA=ON
+        -DCAFFE2_USE_CUDNN=ON
+        -DCMAKE_BUILD_TYPE=Release
+        -G Ninja
+        -S ${{ github.workspace }}
+    
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build --config Release

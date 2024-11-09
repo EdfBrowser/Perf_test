@@ -1,0 +1,6 @@
+# File format for prediction results
+- csv
+- json
+- npy
+- txt
+- hdf5
