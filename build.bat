@@ -5,7 +5,7 @@ setlocal
 set "VS_PATH=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community"
 
 :: 设置 Visual Studio 工具的路径
-call "%VS_PATH%\\VC\\Auxiliary\\Build\\vcvars64.bat"
+call "%VS_PATH%\\VC\\Auxiliary\\Build\\vcvars64.bat"  -vcvars_ver=14.2
 
 :: 设置工作区目录
 set "WORKSPACE=%~dp0"
